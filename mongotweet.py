@@ -2,16 +2,28 @@
 #                       Pavan Narayanan, 2016
 # Connect to MongoDB
 
-from pymongo import MongoClient
-from nltk import word_tokenize
 import itertools
+import string
+import nltk
+import os
+
+from pymongo import MongoClient
+from nltk import *
 from collections import Counter
 from nltk.corpus import stopwords
-import string
 
+# Database
+mongodb = "twitterdata"
+# Collection
+mongocollect = "twitter1"
+
+# Import the JSON to MongoDB
+os.system("mongoimport --db " + mongodb + " --collection " + mongocollect)
+
+# Connect to the MongoDB Server
 client = MongoClient('localhost', 27017)
-db = client['twitterdata']
-collection = db['twitter1']
+db = client[mongodb]
+collection = db[mongocollect]
 
 # Extract just one
 query0 = db.twitter1.find_one()
@@ -20,8 +32,11 @@ query0 = db.twitter1.find_one()
 # for key,value in query0:
 #    print query0.values
 # Extract only the tweets
+
+# Queries
 query1 = db.twitter1.find({}, {"text": 1, "_id": 0})
 query2 = db.twitter1.find({}, {"user.location": 1, "text": 1, "_id": 0})
+
 # print type(query1)
 
 # df = pd.DataFrame(query1)
@@ -51,17 +66,16 @@ wordCount = Counter(list(itertools.chain(*newlist)))
 
 # prepare a list of words to remove
 punctuation = list(string.punctuation)
-stop = stopwords.words('english') + punctuation + ['rt', 'via']
+stop = stopwords.words('english') + punctuation + ['rt', 'via', 'RT', 'http', 'index', ]
 
 # remove the words from flattened list
-nremove = [x for x in flatnewlist if x not in stop]
+nremove = [x for x in flatnewlist if x not in stop and not x.startswith('//')]
 
 # do a word count on that flattened list
 wordCount1 = Counter(nremove)
 
-f1 = open('newlist1.txt', 'w')
-print >>f1, wordCount1
-#print punctuation
-
-#f1.write('wordCount1')
-# print wordCount1
+#f1 = open('newlist1.txt', 'w')
+#print >>f1, wordCount1
+freqdist = nltk.FreqDist(wordCount1)
+#freqdist.plot(50,cumulative=False)
+freqdist.tabulate()
